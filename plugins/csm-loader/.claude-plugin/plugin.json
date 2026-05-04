@@ -1,0 +1,16 @@
+{
+  "name": "csm-loader",
+  "version": "1.0.0",
+  "description": "Plugin de chargement Customer Skill Manager. Charge dynamiquement les ressources métier depuis le serveur CSM en fonction de la licence du client.",
+  "author": {
+    "name": "Lotto"
+  },
+  "license": "Proprietary",
+  "keywords": [
+    "csm",
+    "customer-skill-manager",
+    "license",
+    "subscription",
+    "dynamic-loading"
+  ]
+}
