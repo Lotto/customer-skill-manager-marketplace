@@ -13,48 +13,40 @@ Le contenu métier réel n'est **pas** présent dans ce skill : il est servi à 
 Avant toute autre action, vérifie que `CSM_LICENSE_KEY` est disponible :
 
 ```bash
-python -c "import os, sys; sys.exit(0 if os.getenv('CSM_LICENSE_KEY','').strip() else 1)"
+[ -n "$CSM_LICENSE_KEY" ] && echo "OK" || echo "MISSING"
 ```
 
-**Si la commande retourne 0** (clé présente) → passe directement à l'Étape 1.
+**Si la sortie est `OK`** → passe directement à l'Étape 1.
 
-**Si la commande retourne 1** (clé absente) :
+**Si la sortie est `MISSING`** :
 
-1. **Demande la clé à l'utilisateur** en lui expliquant pourquoi elle est nécessaire :
+1. **Demande la clé à l'utilisateur** :
 
    > "Le plugin Customer Skill Manager nécessite une clé de licence (`CSM_LICENSE_KEY`). Vous pouvez la trouver dans votre espace client CSM ou auprès du support. Veuillez saisir votre clé de licence :"
 
-2. **Une fois la clé fournie**, stocke-la dans `.claude/settings.local.json` (crée le fichier s'il n'existe pas, ou fusionne avec l'existant) sous la clé `env` :
+2. **Une fois la clé fournie**, stocke-la dans `.claude/settings.local.json` via PowerShell :
 
-   ```json
-   {
-     "env": {
-       "CSM_LICENSE_KEY": "<clé fournie par l'utilisateur>"
-     }
-   }
+   ```powershell
+   $p = ".claude/settings.local.json"
+   $data = if (Test-Path $p) { Get-Content $p -Raw | ConvertFrom-Json -AsHashtable } else { @{} }
+   if (-not $data.ContainsKey('env')) { $data['env'] = @{} }
+   $data['env']['CSM_LICENSE_KEY'] = '<clé>'
+   New-Item -ItemType Directory -Force -Path ".claude" | Out-Null
+   $data | ConvertTo-Json -Depth 10 | Set-Content $p -Encoding UTF8
+   Write-Host "CSM_LICENSE_KEY enregistrée dans $p"
    ```
 
-   Pour lire l'existant et fusionner proprement, utilise ce script :
-
-   ```bash
-   python -c "
-   import json, os, pathlib
-   p = pathlib.Path('.claude/settings.local.json')
-   data = json.loads(p.read_text(encoding='utf-8')) if p.exists() else {}
-   data.setdefault('env', {})['CSM_LICENSE_KEY'] = '<clé>'
-   p.parent.mkdir(parents=True, exist_ok=True)
-   p.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
-   print('CSM_LICENSE_KEY enregistrée dans .claude/settings.local.json')
-   "
-   ```
-
-   Remplace `<clé>` par la valeur exacte fournie par l'utilisateur (sans guillemets supplémentaires).
+   Remplace `<clé>` par la valeur exacte fournie par l'utilisateur.
 
 3. **Informe l'utilisateur** que la clé a été enregistrée et sera disponible automatiquement dans les prochaines sessions.
 
-4. **Continue avec l'Étape 1** en utilisant la clé comme variable d'environnement pour l'appel courant. Sur PowerShell : `$env:CSM_LICENSE_KEY = '<clé>'` puis lance fetch.py. Sur bash : `CSM_LICENSE_KEY='<clé>' python ...`.
+4. **Continue avec l'Étape 1** en définissant la variable pour l'appel courant :
 
-> **Note sécurité :** `.claude/settings.local.json` doit être listé dans `.gitignore` pour ne pas exposer la clé dans le dépôt.
+   ```powershell
+   $env:CSM_LICENSE_KEY = '<clé>'
+   ```
+
+> **Note sécurité :** `.claude/settings.local.json` est listé dans `.gitignore` pour ne pas exposer la clé dans le dépôt.
 
 ---
 
@@ -63,39 +55,56 @@ python -c "import os, sys; sys.exit(0 if os.getenv('CSM_LICENSE_KEY','').strip()
 Avant toute autre action, exécute :
 
 ```bash
-python ${CLAUDE_PLUGIN_ROOT}/scripts/fetch.py instructions
+CSM_ENDPOINT="${CSM_ENDPOINT:-https://api.customer-skill-manager.example.com/v1/skill-resource}"
+curl -sf --fail-with-body \
+  -H "X-License-Key: $CSM_LICENSE_KEY" \
+  -H "User-Agent: csm-loader/1.0.0" \
+  -H "Accept: text/markdown, text/plain, application/json" \
+  "$CSM_ENDPOINT?resource=instructions"
 ```
 
-Le script retourne sur stdout les **instructions métier complètes** que tu dois suivre scrupuleusement pour cette session. Ces instructions peuvent référencer d'autres ressources à charger à la demande (templates, grilles tarifaires, exemples, règles spécifiques).
+La commande retourne sur stdout les **instructions métier complètes** que tu dois suivre scrupuleusement pour cette session.
 
 ## Étape 2 — Charger les ressources complémentaires à la demande
 
 Les instructions principales te diront quand charger des ressources supplémentaires. La syntaxe est toujours la même :
 
 ```bash
-python ${CLAUDE_PLUGIN_ROOT}/scripts/fetch.py <nom-de-la-ressource>
+CSM_ENDPOINT="${CSM_ENDPOINT:-https://api.customer-skill-manager.example.com/v1/skill-resource}"
+curl -sf --fail-with-body \
+  -H "X-License-Key: $CSM_LICENSE_KEY" \
+  -H "User-Agent: csm-loader/1.0.0" \
+  -H "Accept: text/markdown, text/plain, application/json" \
+  "$CSM_ENDPOINT?resource=<nom-de-la-ressource>"
 ```
 
 Exemples de ressources que tu pourras être amené à charger (la liste exacte est fournie dans les instructions principales) :
 
-- `python ${CLAUDE_PLUGIN_ROOT}/scripts/fetch.py grille-tarifs` — barème tarifaire à jour
-- `python ${CLAUDE_PLUGIN_ROOT}/scripts/fetch.py template-document` — modèle de document à remplir
-- `python ${CLAUDE_PLUGIN_ROOT}/scripts/fetch.py exemples` — cas concrets de référence
-- `python ${CLAUDE_PLUGIN_ROOT}/scripts/fetch.py regles-{contexte}` — règles spécifiques à un contexte
+- `resource=grille-tarifs` — barème tarifaire à jour
+- `resource=template-document` — modèle de document à remplir
+- `resource=exemples` — cas concrets de référence
+- `resource=regles-{contexte}` — règles spécifiques à un contexte
 
 **Charge uniquement les ressources nécessaires à la tâche en cours.** Ne charge pas tout par anticipation — le système est conçu en chargement progressif pour rester efficace.
 
 ## Étape 3 — Gestion des erreurs
 
-Si `fetch.py` retourne un code de sortie non nul ou un message d'erreur, traite-le ainsi :
+Si `curl` retourne un code de sortie non nul, obtiens le code HTTP avec :
 
-| Code HTTP retourné | Signification | Action |
+```bash
+CSM_ENDPOINT="${CSM_ENDPOINT:-https://api.customer-skill-manager.example.com/v1/skill-resource}"
+curl -s -o /dev/null -w "%{http_code}" \
+  -H "X-License-Key: $CSM_LICENSE_KEY" \
+  "$CSM_ENDPOINT?resource=<nom-de-la-ressource>"
+```
+
+| Code HTTP | Signification | Action |
 |---|---|---|
 | **402** | Abonnement Customer Skill Manager inactif ou impayé | Informe l'utilisateur que la licence est inactive et **arrête immédiatement** la tâche. Suggère de contacter le support CSM |
 | **403** | Clé de licence invalide ou non autorisée pour ce skill | Même action que 402, mais précise que la clé est invalide |
 | **429** | Trop de requêtes | Informe l'utilisateur d'attendre quelques minutes |
 | **500+** | Erreur serveur CSM | Informe l'utilisateur d'un problème temporaire et suggère de réessayer |
-| **Erreur réseau** | Pas de connexion | Demande à l'utilisateur de vérifier sa connexion internet |
+| **000** | Pas de connexion / timeout | Demande à l'utilisateur de vérifier sa connexion internet |
 
 Dans **tous ces cas d'erreur**, ne tente **jamais** d'effectuer la tâche sans avoir chargé les instructions à jour. Le contenu de ce skill seul est volontairement insuffisant pour fonctionner — c'est une mesure de sécurité et de conformité.
 
@@ -110,15 +119,17 @@ Dans **tous ces cas d'erreur**, ne tente **jamais** d'effectuer la tâche sans a
 ## Configuration
 
 Ce plugin nécessite la variable d'environnement `CSM_LICENSE_KEY` configurée avec la clé de licence fournie au client.
+L'Étape 0 gère automatiquement la demande et la persistance si la clé est absente.
 
-Sans cette variable, le plugin ne peut pas fonctionner et toute requête sera rejetée par le serveur CSM.
+Variables optionnelles :
+- `CSM_ENDPOINT` — URL du serveur CSM (défaut : production)
 
 ## Confidentialité et licence
 
-Le contenu retourné par `fetch.py` est protégé par la licence Customer Skill Manager du client.
+Le contenu retourné par le serveur CSM est protégé par la licence Customer Skill Manager du client.
 Chaque ressource servie contient un filigrane unique permettant de tracer une éventuelle fuite.
 La diffusion, copie ou redistribution non autorisée du contenu est strictement interdite et constitue une violation des conditions générales de service.
 
 ---
 
-*Customer Skill Manager (CSM) — Plugin loader version 1.0.0*
+*Customer Skill Manager (CSM) — Plugin loader version 2.0.0*
