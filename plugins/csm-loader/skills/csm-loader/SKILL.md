@@ -8,6 +8,56 @@ description: Customer Skill Manager loader. Use this skill whenever the user req
 Ce skill charge dynamiquement les instructions métier depuis le serveur Customer Skill Manager (CSM) en fonction de la licence active du client.
 Le contenu métier réel n'est **pas** présent dans ce skill : il est servi à la demande pour garantir que les instructions sont toujours à jour et conformes.
 
+## Étape 0 — Vérifier la clé de licence (OBLIGATOIRE en premier)
+
+Avant toute autre action, vérifie que `CSM_LICENSE_KEY` est disponible :
+
+```bash
+python -c "import os, sys; sys.exit(0 if os.getenv('CSM_LICENSE_KEY','').strip() else 1)"
+```
+
+**Si la commande retourne 0** (clé présente) → passe directement à l'Étape 1.
+
+**Si la commande retourne 1** (clé absente) :
+
+1. **Demande la clé à l'utilisateur** en lui expliquant pourquoi elle est nécessaire :
+
+   > "Le plugin Customer Skill Manager nécessite une clé de licence (`CSM_LICENSE_KEY`). Vous pouvez la trouver dans votre espace client CSM ou auprès du support. Veuillez saisir votre clé de licence :"
+
+2. **Une fois la clé fournie**, stocke-la dans `.claude/settings.local.json` (crée le fichier s'il n'existe pas, ou fusionne avec l'existant) sous la clé `env` :
+
+   ```json
+   {
+     "env": {
+       "CSM_LICENSE_KEY": "<clé fournie par l'utilisateur>"
+     }
+   }
+   ```
+
+   Pour lire l'existant et fusionner proprement, utilise ce script :
+
+   ```bash
+   python -c "
+   import json, os, pathlib
+   p = pathlib.Path('.claude/settings.local.json')
+   data = json.loads(p.read_text(encoding='utf-8')) if p.exists() else {}
+   data.setdefault('env', {})['CSM_LICENSE_KEY'] = '<clé>'
+   p.parent.mkdir(parents=True, exist_ok=True)
+   p.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
+   print('CSM_LICENSE_KEY enregistrée dans .claude/settings.local.json')
+   "
+   ```
+
+   Remplace `<clé>` par la valeur exacte fournie par l'utilisateur (sans guillemets supplémentaires).
+
+3. **Informe l'utilisateur** que la clé a été enregistrée et sera disponible automatiquement dans les prochaines sessions.
+
+4. **Continue avec l'Étape 1** en utilisant la clé comme variable d'environnement pour l'appel courant. Sur PowerShell : `$env:CSM_LICENSE_KEY = '<clé>'` puis lance fetch.py. Sur bash : `CSM_LICENSE_KEY='<clé>' python ...`.
+
+> **Note sécurité :** `.claude/settings.local.json` doit être listé dans `.gitignore` pour ne pas exposer la clé dans le dépôt.
+
+---
+
 ## Étape 1 — Charger les instructions principales (OBLIGATOIRE)
 
 Avant toute autre action, exécute :

@@ -3,6 +3,9 @@
 .env.local
 .env.*.local
 
+# Claude Code — settings locaux (contiennent des clés sensibles)
+.claude/settings.local.json
+
 # Python
 __pycache__/
 *.py[cod]
