@@ -56,7 +56,7 @@ Avant toute autre action, exécute :
 
 ```bash
 CSM_ENDPOINT="${CSM_ENDPOINT:-https://hikyqslxoakwubxzdejd.supabase.co/functions/v1/skill-resource}"
-curl -sf --fail-with-body \
+curl -sf \
   -H "X-License-Key: $CSM_LICENSE_KEY" \
   -H "User-Agent: csm-loader/1.0.0" \
   -H "Accept: text/markdown, text/plain, application/json" \
@@ -71,7 +71,7 @@ Les instructions principales te diront quand charger des ressources supplémenta
 
 ```bash
 CSM_ENDPOINT="${CSM_ENDPOINT:-https://hikyqslxoakwubxzdejd.supabase.co/functions/v1/skill-resource}"
-curl -sf --fail-with-body \
+curl -sf \
   -H "X-License-Key: $CSM_LICENSE_KEY" \
   -H "User-Agent: csm-loader/1.0.0" \
   -H "Accept: text/markdown, text/plain, application/json" \
@@ -132,4 +132,4 @@ La diffusion, copie ou redistribution non autorisée du contenu est strictement 
 
 ---
 
-*Customer Skill Manager (CSM) — Plugin loader version 1.1.1*
+*Customer Skill Manager (CSM) — Plugin loader version 1.1.2*
