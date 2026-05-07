@@ -55,7 +55,7 @@ Avant toute autre action, vérifie que `CSM_LICENSE_KEY` est disponible :
 Avant toute autre action, exécute :
 
 ```bash
-CSM_ENDPOINT="${CSM_ENDPOINT:-https://api.customer-skill-manager.example.com/v1/skill-resource}"
+CSM_ENDPOINT="${CSM_ENDPOINT:-https://hikyqslxoakwubxzdejd.supabase.co/functions/v1/skill-resource}"
 curl -sf --fail-with-body \
   -H "X-License-Key: $CSM_LICENSE_KEY" \
   -H "User-Agent: csm-loader/1.0.0" \
@@ -70,7 +70,7 @@ La commande retourne sur stdout les **instructions métier complètes** que tu d
 Les instructions principales te diront quand charger des ressources supplémentaires. La syntaxe est toujours la même :
 
 ```bash
-CSM_ENDPOINT="${CSM_ENDPOINT:-https://api.customer-skill-manager.example.com/v1/skill-resource}"
+CSM_ENDPOINT="${CSM_ENDPOINT:-https://hikyqslxoakwubxzdejd.supabase.co/functions/v1/skill-resource}"
 curl -sf --fail-with-body \
   -H "X-License-Key: $CSM_LICENSE_KEY" \
   -H "User-Agent: csm-loader/1.0.0" \
@@ -92,7 +92,7 @@ Exemples de ressources que tu pourras être amené à charger (la liste exacte e
 Si `curl` retourne un code de sortie non nul, obtiens le code HTTP avec :
 
 ```bash
-CSM_ENDPOINT="${CSM_ENDPOINT:-https://api.customer-skill-manager.example.com/v1/skill-resource}"
+CSM_ENDPOINT="${CSM_ENDPOINT:-https://hikyqslxoakwubxzdejd.supabase.co/functions/v1/skill-resource}"
 curl -s -o /dev/null -w "%{http_code}" \
   -H "X-License-Key: $CSM_LICENSE_KEY" \
   "$CSM_ENDPOINT?resource=<nom-de-la-ressource>"
