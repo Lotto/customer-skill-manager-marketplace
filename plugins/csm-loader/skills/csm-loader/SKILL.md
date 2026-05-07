@@ -132,4 +132,4 @@ La diffusion, copie ou redistribution non autorisée du contenu est strictement 
 
 ---
 
-*Customer Skill Manager (CSM) — Plugin loader version 2.0.2*
+*Customer Skill Manager (CSM) — Plugin loader version 1.1.1*
