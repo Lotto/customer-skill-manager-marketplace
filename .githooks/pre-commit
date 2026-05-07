@@ -1,0 +1,14 @@
+#!/bin/bash
+SKILL_FILE="plugins/csm-loader/skills/csm-loader/SKILL.md"
+
+[ -f "$SKILL_FILE" ] || exit 0
+
+current=$(grep -Eo 'Plugin loader version [0-9]+\.[0-9]+\.[0-9]+' "$SKILL_FILE" | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+[ -n "$current" ] || exit 0
+
+IFS='.' read -r major minor patch <<< "$current"
+new_version="$major.$minor.$((patch + 1))"
+
+sed -i "s/Plugin loader version $current/Plugin loader version $new_version/" "$SKILL_FILE"
+git add "$SKILL_FILE"
+echo "CSM version: $current → $new_version"
