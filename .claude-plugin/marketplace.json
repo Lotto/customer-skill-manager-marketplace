@@ -3,7 +3,7 @@
     "metadata": {
         "displayName": "Customer Skill Manager Marketplace",
         "description": "Catalogue officiel des plugins et skills distribués via Customer Skill Manager (CSM). Chaque plugin charge dynamiquement son contenu métier depuis le serveur CSM avec contrôle de licence.",
-        "version": "1.0.0"
+        "version": "1.1.4"
     },
     "owner": {
         "name": "Lotto"
@@ -13,7 +13,7 @@
             "name": "csm-loader",
             "source": "./plugins/csm-loader",
             "description": "Plugin de chargement Customer Skill Manager. Stub léger qui invoque dynamiquement les ressources métier (instructions, templates, grilles tarifaires, exemples) depuis le serveur CSM en fonction de la licence du client. Charge toujours les instructions à jour, gère la révocation par non-paiement, et applique un filigrane unique par licence.",
-            "version": "1.0.0",
+            "version": "1.1.4",
             "category": "business-automation",
             "tags": [
                 "csm",
