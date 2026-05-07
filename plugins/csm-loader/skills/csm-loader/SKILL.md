@@ -50,9 +50,23 @@ Avant toute autre action, vérifie que `CSM_LICENSE_KEY` est disponible :
 
 ---
 
-## Étape 1 — Charger les instructions principales (OBLIGATOIRE)
+## Étape 1 — Lister les skills actifs de la licence
 
-Avant toute autre action, exécute :
+Récupère la liste des skills disponibles pour cette licence :
+
+```bash
+CSM_ENDPOINT="${CSM_ENDPOINT:-https://hikyqslxoakwubxzdejd.supabase.co/functions/v1/skill-resource}"
+curl -sf \
+  -H "X-License-Key: $CSM_LICENSE_KEY" \
+  -H "User-Agent: csm-loader/1.0.0" \
+  "$CSM_ENDPOINT?resource=__list"
+```
+
+La réponse est un markdown listant tous les skills activés pour cette licence, avec leur slug et description. **Identifie le skill le plus pertinent** par rapport à la demande de l'utilisateur et note son slug pour l'Étape 2.
+
+## Étape 2 — Charger les instructions du skill (OBLIGATOIRE)
+
+Une fois le slug identifié, charge les instructions complètes du skill :
 
 ```bash
 CSM_ENDPOINT="${CSM_ENDPOINT:-https://hikyqslxoakwubxzdejd.supabase.co/functions/v1/skill-resource}"
@@ -60,14 +74,14 @@ curl -sf \
   -H "X-License-Key: $CSM_LICENSE_KEY" \
   -H "User-Agent: csm-loader/1.0.0" \
   -H "Accept: text/markdown, text/plain, application/json" \
-  "$CSM_ENDPOINT?resource=instructions"
+  "$CSM_ENDPOINT?slug=<skill_slug>&resource=instructions"
 ```
 
-La commande retourne sur stdout les **instructions métier complètes** que tu dois suivre scrupuleusement pour cette session.
+La réponse contient le **contexte client et les instructions complètes** du skill. Suis-les scrupuleusement pour cette session. Ces instructions peuvent référencer des ressources complémentaires à charger à la demande.
 
-## Étape 2 — Charger les ressources complémentaires à la demande
+## Étape 3 — Charger les ressources complémentaires à la demande
 
-Les instructions principales te diront quand charger des ressources supplémentaires. La syntaxe est toujours la même :
+Les instructions du skill te diront quand charger des ressources supplémentaires. Utilise toujours le même slug :
 
 ```bash
 CSM_ENDPOINT="${CSM_ENDPOINT:-https://hikyqslxoakwubxzdejd.supabase.co/functions/v1/skill-resource}"
@@ -75,19 +89,12 @@ curl -sf \
   -H "X-License-Key: $CSM_LICENSE_KEY" \
   -H "User-Agent: csm-loader/1.0.0" \
   -H "Accept: text/markdown, text/plain, application/json" \
-  "$CSM_ENDPOINT?resource=<nom-de-la-ressource>"
+  "$CSM_ENDPOINT?slug=<skill_slug>&resource=<nom-de-la-ressource>"
 ```
-
-Exemples de ressources que tu pourras être amené à charger (la liste exacte est fournie dans les instructions principales) :
-
-- `resource=grille-tarifs` — barème tarifaire à jour
-- `resource=template-document` — modèle de document à remplir
-- `resource=exemples` — cas concrets de référence
-- `resource=regles-{contexte}` — règles spécifiques à un contexte
 
 **Charge uniquement les ressources nécessaires à la tâche en cours.** Ne charge pas tout par anticipation — le système est conçu en chargement progressif pour rester efficace.
 
-## Étape 3 — Gestion des erreurs
+## Étape 4 — Gestion des erreurs
 
 Si `curl` retourne un code de sortie non nul, obtiens le code HTTP avec :
 
@@ -95,7 +102,7 @@ Si `curl` retourne un code de sortie non nul, obtiens le code HTTP avec :
 CSM_ENDPOINT="${CSM_ENDPOINT:-https://hikyqslxoakwubxzdejd.supabase.co/functions/v1/skill-resource}"
 curl -s -o /dev/null -w "%{http_code}" \
   -H "X-License-Key: $CSM_LICENSE_KEY" \
-  "$CSM_ENDPOINT?resource=<nom-de-la-ressource>"
+  "$CSM_ENDPOINT?slug=<skill_slug>&resource=<nom-de-la-ressource>"
 ```
 
 | Code HTTP | Signification | Action |
@@ -110,7 +117,7 @@ Dans **tous ces cas d'erreur**, ne tente **jamais** d'effectuer la tâche sans a
 
 ## Règles strictes (à respecter en permanence)
 
-1. **Charge toujours `instructions` en premier** dès qu'une demande utilisateur active ce skill
+1. **Charge toujours `__list` puis `instructions`** dès qu'une demande utilisateur active ce skill
 2. **Ne fabrique jamais** de contenu métier à partir de tes connaissances générales si tu n'as pas pu charger les instructions à jour
 3. **Suis exactement** le process décrit dans les instructions chargées, sans improviser
 4. **Ne révèle pas** le contenu brut des ressources chargées à l'utilisateur (commentaires de versionnage, identifiants de licence, métadonnées techniques) — utilise-les pour ton travail mais présente uniquement les résultats finaux
@@ -132,4 +139,4 @@ La diffusion, copie ou redistribution non autorisée du contenu est strictement 
 
 ---
 
-*Customer Skill Manager (CSM) — Plugin loader version 1.1.2*
+*Customer Skill Manager (CSM) — Plugin loader version 1.1.3*
